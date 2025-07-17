@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Malla Curricular Enfermería</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f4f6f9;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+      color: #2a4d69;
+    }
+    .grid {
+      display: flex;
+      gap: 20px;
+      overflow-x: auto;
+    }
+    .semester {
+      background-color: #ffffff;
+      padding: 15px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      min-width: 250px;
+      flex-shrink: 0;
+    }
+    .semester h2 {
+      font-size: 18px;
+      color: #4a6fa5;
+      margin-bottom: 10px;
+    }
+    .subject {
+      background-color: #e1ecf4;
+      margin: 8px 0;
+      padding: 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      position: relative;
+    }
+    .subject.completed {
+      background-color: #a7d7c5;
+      text-decoration: line-through;
+    }
+    .subject.locked {
+      background-color: #d3d3d3;
+      cursor: not-allowed;
+    }
+    .subject:hover::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      background: #333;
+      color: #fff;
+      padding: 5px 10px;
+      border-radius: 5px;
+      top: 100%;
+      left: 0;
+      white-space: nowrap;
+      font-size: 12px;
+      display: block;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+  <h1>Malla Curricular - Enfermería</h1>
+  <div class="grid" id="malla"></div>
+
+  <script>
+    const estructura = [
+      { nombre: 'Semestre I', materias: ['BIOLOGÍA CELULAR Y MOLECULAR', 'QUÍMICA GENERAL', 'ANATOMÍA GENERAL', 'HISTORIA Y FUDAMENTO DEL CUIDADO ENFERMERO'] },
+      { nombre: 'Semestre II', materias: ['BIOÉTICA', 'BIOQUÍMICA', 'PSICOLOGÍA GENERAL', 'ANATOMORFOFISIOLOGÍA', 'CUIDADO ENFERMERO EN LA SALUD DE LA COMUNIDAD'] },
+      { nombre: 'Semestre III', materias: ['INGLÉS l', 'MICROBIOLOGÍA', 'FISIOLOGÍA GENERAL', 'CUIDADO ENFERMERO Y VALORACIÓN PERSONA – FAMILIA – ENTERNO', 'SALUD PÚBLICA'] },
+      { nombre: 'Semestre IV', materias: ['INGLÉS ll', 'GENÉTICA GENERAL', 'FARMACOLOGÍA', 'CUIDADO ENFERMERO DEL ADULTO l'] },
+      { nombre: 'Semestre V', materias: ['INGLÉS lll', 'ELECTIVA DE FACULTAD', 'FUNDAMENTO EPISTEMOLÓGICO DEL CUIDADO ENFERMERO', 'PATALOGÍA GENERAL', 'CUIDADO ENFERMERO DEL ADULTO ll'] },
+      { nombre: 'Semestre VI', materias: ['INGLÉS lV', 'RAZONAMIENTO CUANTITATIVO', 'CONSTITUCIÓN POLÍTICA', 'CUIDADO ENFERMERO DE LA GESTANTE Y SU ENTORNO'] },
+      { nombre: 'Semestre VII', materias: ['BIOMETRÍA', 'CUIDADO ENFERMERO NIÑO – ADOLESCENTE Y ENTORNO', 'ELECTIVA DE PROFUNDIZACIÓN I'] },
+      { nombre: 'Semestre VIII', materias: ['EPIDEMIOLOGÍA', 'ELECTIVA DE PROFUNDIZACIÓN II', 'CUIDADO ENFERMERO AL ADULTO MAYOR Y SALUD MENTAL'] },
+      { nombre: 'Semestre IX', materias: ['TRABAJO DE GRADO I', 'ELECTIVA DE PROFUNDIZACIÓN III', 'CUIDADOS PALIATIVOS', 'ADMINISTRACIÓN Y GESTIÓN DEL CUIDADO I'] },
+      { nombre: 'Semestre X', materias: ['TRABAJO DE GRADO II', 'ADMINISTRACIÓN Y GESTIÓN DEL CUIDADO II'] }
+    ];
+
+    const dependencias = {
+      'BIOQUÍMICA': ['QUÍMICA GENERAL'],
+      'ANATOMORFOFISIOLOGÍA': ['ANATOMÍA GENERAL'],
+      'CUIDADO ENFERMERO EN LA SALUD DE LA COMUNIDAD': ['HISTORIA Y FUDAMENTO DEL CUIDADO ENFERMERO'],
+      'MICROBIOLOGÍA': ['BIOLOGÍA CELULAR Y MOLECULAR'],
+      'FISIOLOGÍA GENERAL': ['ANATOMORFOFISIOLOGÍA'],
+      'CUIDADO ENFERMERO Y VALORACIÓN PERSONA – FAMILIA – ENTERNO': ['CUIDADO ENFERMERO EN LA SALUD DE LA COMUNIDAD'],
+      'GENÉTICA GENERAL': ['BIOLOGÍA CELULAR Y MOLECULAR'],
+      'FARMACOLOGÍA': ['BIOQUÍMICA'],
+      'CUIDADO ENFERMERO DEL ADULTO l': ['FISIOLOGÍA GENERAL'],
+      'CUIDADO ENFERMERO DEL ADULTO ll': ['CUIDADO ENFERMERO DEL ADULTO l'],
+      'CUIDADO ENFERMERO DE LA GESTANTE Y SU ENTORNO': ['CUIDADO ENFERMERO DEL ADULTO ll'],
+      'CUIDADO ENFERMERO NIÑO – ADOLESCENTE Y ENTORNO': ['CUIDADO ENFERMERO DE LA GESTANTE Y SU ENTORNO'],
+      'CUIDADO ENFERMERO AL ADULTO MAYOR Y SALUD MENTAL': ['CUIDADO ENFERMERO NIÑO – ADOLESCENTE Y ENTORNO'],
+      'CUIDADOS PALIATIVOS': ['CUIDADO ENFERMERO AL ADULTO MAYOR Y SALUD MENTAL'],
+      'ADMINISTRACIÓN Y GESTIÓN DEL CUIDADO II': ['ADMINISTRACIÓN Y GESTIÓN DEL CUIDADO I'],
+      'TRABAJO DE GRADO II': ['TRABAJO DE GRADO I']
+    };
+
+    const estado = JSON.parse(localStorage.getItem('mallaEnfermeria')) || {};
+
+    function crearMalla() {
+      const contenedor = document.getElementById('malla');
+      estructura.forEach((semestre, i) => {
+        const columna = document.createElement('div');
+        columna.className = 'semester';
+        const titulo = document.createElement('h2');
+        titulo.textContent = semestre.nombre;
+        columna.appendChild(titulo);
+
+        semestre.materias.forEach(materia => {
+          const div = document.createElement('div');
+          div.className = 'subject';
+          div.textContent = materia;
+
+          if (estado[materia]) {
+            div.classList.add('completed');
+          }
+
+          const requisitos = dependencias[materia];
+          if (requisitos && !requisitos.every(req => estado[req])) {
+            div.classList.add('locked');
+            div.setAttribute('data-tooltip', 'Requiere: ' + requisitos.filter(r => !estado[r]).join(', '));
+          } else {
+            div.addEventListener('click', () => toggleMateria(div, materia));
+          }
+
+          columna.appendChild(div);
+        });
+
+        contenedor.appendChild(columna);
+      });
+    }
+
+    function toggleMateria(div, nombre) {
+      estado[nombre] = !estado[nombre];
+      localStorage.setItem('mallaEnfermeria', JSON.stringify(estado));
+      location.reload();
+    }
+
+    crearMalla();
+  </script>
+</body>
+</html>
